@@ -24,8 +24,8 @@ class SignedDataVerifier
     public function __construct(
         private readonly array $rootCertificates,
         private readonly bool $enableOnlineChecks,
-        private readonly Environment $environment,
-        private readonly string $bundleId,
+        private readonly ?Environment $environment = null,
+        private readonly ?string $bundleId = null,
         private readonly ?int $appAppleId = null,
     ) {
         $this->chainVerifier = new ChainVerifier($this->rootCertificates);
@@ -46,7 +46,7 @@ class SignedDataVerifier
     public function verifyAndDecodeRenewalInfo(string $signedRenewalInfo): JWSRenewalInfoDecodedPayload
     {
         $decodedRenewalInfo = JWSRenewalInfoDecodedPayload::fromObject($this->decodeSignedObject($signedRenewalInfo));
-        if ($decodedRenewalInfo->getEnvironment() !== $this->environment) {
+        if ($this->environment && $decodedRenewalInfo->getEnvironment() !== $this->environment) {
             throw new VerificationException(VerificationStatus::INVALID_ENVIRONMENT);
         }
         return $decodedRenewalInfo;
@@ -66,7 +66,7 @@ class SignedDataVerifier
         $decodedTransactionInfo = JWSTransactionDecodedPayload::fromObject(
             $this->decodeSignedObject($signedTransaction)
         );
-        if ($decodedTransactionInfo->getEnvironment() !== $this->environment) {
+        if ($this->environment && $decodedTransactionInfo->getEnvironment() !== $this->environment) {
             throw new VerificationException(VerificationStatus::INVALID_ENVIRONMENT);
         }
         return $decodedTransactionInfo;
@@ -117,13 +117,13 @@ class SignedDataVerifier
      */
     public function verifyNotification(?string $bundleId, ?int $appAppleId, ?Environment $environment): void
     {
-        if ($bundleId !== $this->bundleId
-            || ($this->environment === Environment::PRODUCTION
+        if ( ($this->bundleId && $bundleId !== $this->bundleId)
+            || ($this->environment && $this->environment === Environment::PRODUCTION
                 && $appAppleId !== $this->appAppleId)
         ) {
             throw new VerificationException(VerificationStatus::INVALID_APP_IDENTIFIER);
         }
-        if ($environment !== $this->environment) {
+        if ($this->environment && $environment !== $this->environment) {
             throw new VerificationException(VerificationStatus::INVALID_ENVIRONMENT);
         }
     }
@@ -139,13 +139,13 @@ class SignedDataVerifier
     public function verifyAndDecodeAppTransaction(string $signedAppTransaction): AppTransaction
     {
         $decodedAppTransaction = AppTransaction::fromObject($this->decodeSignedObject($signedAppTransaction));
-        if ($decodedAppTransaction->getBundleId() !== $this->bundleId
-            || ($this->environment === Environment::PRODUCTION
+        if (($this->bundleId && $decodedAppTransaction->getBundleId() !== $this->bundleId)
+            || ($this->environment && $this->environment === Environment::PRODUCTION
                 && $decodedAppTransaction->getAppAppleId() !== $this->appAppleId)
         ) {
             throw new VerificationException(VerificationStatus::INVALID_APP_IDENTIFIER);
         }
-        if ($decodedAppTransaction->getReceiptType() !== $this->environment) {
+        if ($this->environment && $decodedAppTransaction->getReceiptType() !== $this->environment) {
             throw new VerificationException(VerificationStatus::INVALID_ENVIRONMENT);
         }
         return $decodedAppTransaction;

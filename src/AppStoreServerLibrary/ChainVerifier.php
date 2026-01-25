@@ -64,7 +64,7 @@ class ChainVerifier
     /**
      * @throws VerificationException
      */
-    public function verify(string $signedData, bool $performOnlineChecks, Environment $environment): stdClass
+    public function verify(string $signedData, bool $performOnlineChecks, ?Environment $environment): stdClass
     {
         $bodySegments = explode(".", $signedData);
         if (count($bodySegments) !== self::EXPECTED_JWT_SEGMENTS) {
